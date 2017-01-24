@@ -447,3 +447,11 @@ curve25519_donna(u8 *mypublic, const u8 *secret, const u8 *basepoint) {
   fcontract(mypublic, z);
   return 0;
 }
+
+int invert(u8 *result, const u8 *input) {
+  limb x[5], xmone[5];
+  fexpand(x, input);
+  crecip(xmone, x);
+  fcontract(result, xmone);
+  return 0;
+}
