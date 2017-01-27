@@ -359,33 +359,37 @@ cmult(limb *resultx, limb *resultz, const u8 *n, const limb *q) {
 
   memcpy(nqpqx, q, sizeof(limb) * 5);
 
+  int start = 0;
   for (i = 0; i < 32; ++i) {
     u8 byte = n[31 - i];
     for (j = 0; j < 8; ++j) {
       const limb bit = byte >> 7;
 
-      swap_conditional(nqx, nqpqx, bit);
-      swap_conditional(nqz, nqpqz, bit);
-      fmonty(nqx2, nqz2,
-             nqpqx2, nqpqz2,
-             nqx, nqz,
-             nqpqx, nqpqz,
-             q);
-      swap_conditional(nqx2, nqpqx2, bit);
-      swap_conditional(nqz2, nqpqz2, bit);
+      start |=  bit;
+      if (start) {
+        swap_conditional(nqx, nqpqx, bit);
+        swap_conditional(nqz, nqpqz, bit);
+        fmonty(nqx2, nqz2,
+               nqpqx2, nqpqz2,
+               nqx, nqz,
+               nqpqx, nqpqz,
+               q);
+        swap_conditional(nqx2, nqpqx2, bit);
+        swap_conditional(nqz2, nqpqz2, bit);
 
-      t = nqx;
-      nqx = nqx2;
-      nqx2 = t;
-      t = nqz;
-      nqz = nqz2;
-      nqz2 = t;
-      t = nqpqx;
-      nqpqx = nqpqx2;
-      nqpqx2 = t;
-      t = nqpqz;
-      nqpqz = nqpqz2;
-      nqpqz2 = t;
+        t = nqx;
+        nqx = nqx2;
+        nqx2 = t;
+        t = nqz;
+        nqz = nqz2;
+        nqz2 = t;
+        t = nqpqx;
+        nqpqx = nqpqx2;
+        nqpqx2 = t;
+        t = nqpqz;
+        nqpqz = nqpqz2;
+        nqpqz2 = t;
+      }
 
       byte <<= 1;
     }
@@ -436,9 +440,9 @@ curve25519_donna(u8 *mypublic, const u8 *secret, const u8 *basepoint) {
   int i;
 
   for (i = 0;i < 32;++i) e[i] = secret[i];
-  e[0] &= 248;
-  e[31] &= 127;
-  e[31] |= 64;
+  // e[0] &= 248;
+  // e[31] &= 127;
+  // e[31] |= 64;
 
   fexpand(bp, basepoint);
   cmult(x, z, e, bp);
