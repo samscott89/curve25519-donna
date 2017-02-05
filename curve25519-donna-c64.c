@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef uint8_t u8;
 typedef uint64_t limb;
@@ -431,6 +432,36 @@ crecip(felem out, const felem z) {
   /* 2^255 - 21 */ fmul(out, t0, a);
 }
 
+static void
+crecip2(felem out, const felem z) {
+  felem a,t0,b,c,d;
+
+  /* 2 */ fsquare_times(d, z, 1); // a = 2
+  /* 8 */ fsquare_times(t0, d, 2);
+  /* 9 */ fmul(b, t0, z); // b = 9
+  /* 11 */ fmul(a, b, d); // a = 11
+  /* 22 */ fsquare_times(t0, a, 1);
+  /* 2^5 - 2^0 = 31 */ fmul(b, t0, b);
+  /* 2^10 - 2^5 */ fsquare_times(t0, b, 5);
+  /* 2^10 - 2^0 */ fmul(b, t0, b);
+  /* 2^20 - 2^10 */ fsquare_times(t0, b, 10);
+  /* 2^20 - 2^0 */ fmul(c, t0, b);
+  /* 2^40 - 2^20 */ fsquare_times(t0, c, 20);
+  /* 2^40 - 2^0 */ fmul(t0, t0, c);
+  /* 2^50 - 2^10 */ fsquare_times(t0, t0, 10);
+  /* 2^50 - 2^0 */ fmul(b, t0, b);
+  /* 2^100 - 2^50 */ fsquare_times(t0, b, 50);
+  /* 2^100 - 2^0 */ fmul(c, t0, b);
+  /* 2^200 - 2^100 */ fsquare_times(t0, c, 100);
+  /* 2^200 - 2^0 */ fmul(t0, t0, c);
+  /* 2^250 - 2^50 */ fsquare_times(t0, t0, 50);
+  /* 2^250 - 2^0 */ fmul(t0, t0, b);
+  /* 2^253 - 2^3 */ fsquare_times(t0, t0, 3);
+  /* 2^253 - 2^3 + 2 */ fmul(t0, t0, d);
+  /* 2^254 - 2^4 + 2^2 */ fsquare_times(t0, t0, 1);
+  /* 2^254 - 2^4 + 2^2 + 2 */ fmul(out, t0, d);
+}
+
 int curve25519_donna(u8 *, const u8 *, const u8 *);
 
 int
@@ -450,4 +481,42 @@ curve25519_donna(u8 *mypublic, const u8 *secret, const u8 *basepoint) {
   fmul(z, x, zmone);
   fcontract(mypublic, z);
   return 0;
+}
+
+int8_t legendre_symbol(const u8 *input) {
+    felem x,x2,x3,leg;
+    uint8_t out[32];
+
+    fexpand(x, input);
+    fsquare_times(x2, x, 1);
+    // x3 = x2*x = x^3
+    fmul(x3, x2, x);
+    // x2 = x2*48662 = A*x^2
+    fscalar_product(x2, x2, 486662);
+    // x3 = x3 + x2 = x^3 +A*x^2
+    fsum(x3, x2);
+    // x3 = x3 + x = x^3 + A*x^2 + x
+    fsum(x3, x);
+    crecip2(leg, x3);
+    fcontract(out, leg);
+
+    // out is either 0, 1 or p-1
+    if (out[0] == 236) {
+      return -1;
+    } else if (out[0] == 1) {
+      return 1;
+    } else {
+      return 0;
+    }
+}
+
+void print_num(const felem x) {
+  uint8_t buf[32];
+  fcontract(buf, x);
+  for(int j = 31; j >= 0; j--)
+      printf("%02x", buf[j]);
+  printf("\n");
+  for(int j = 31; j >= 0; j--)
+      printf("%d, ", buf[j]);
+  printf("\n");
 }
