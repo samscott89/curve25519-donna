@@ -509,14 +509,3 @@ int8_t legendre_symbol(const u8 *input) {
       return 0;
     }
 }
-
-void print_num(const felem x) {
-  uint8_t buf[32];
-  fcontract(buf, x);
-  for(int j = 31; j >= 0; j--)
-      printf("%02x", buf[j]);
-  printf("\n");
-  for(int j = 31; j >= 0; j--)
-      printf("%d, ", buf[j]);
-  printf("\n");
-}
